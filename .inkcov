@@ -1,0 +1,3 @@
+#!/bin/bash
+
+gs -o - -sDEVICE=ink_cov "$1" | awk 'match($0, /^\s+?[0-9]/, a) {print $1+$2+$3+$4}'
