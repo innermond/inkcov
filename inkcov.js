@@ -10,7 +10,14 @@ img.addEventListener("load", function () {
   ctx.drawImage(img, 0, 0);
   var imgData = ctx.getImageData(0, 0, c.width, c.height);
   var cent = colors_percentage(imgData.data);
-  console.log(cent);
+	const mmw = unit_conv(img.naturalWidth+'px', 'mm');
+	const mmh = unit_conv(img.naturalHeight+'px', 'mm');
+	console.log('mm', mmw, mmh);
+	const n_1mm = 4.5595;
+	const e_1mm = 0.00000364;
+	const nn = Math.ceil(mmw*mmh*n_1mm*cent/100, 0);
+	const p = round(mmw*mmh*e_1mm*cent/100, 5);
+	console.log('coverage %', cent, 'price', p, 'picoliters', nn);
 });
 
 const loading_sign = document.getElementById("loading");
@@ -19,11 +26,9 @@ const file_img = document.getElementById("file");
 file_img.addEventListener("change", loadFile);
 
 async function loadFile(event) {
-  console.log("loading...", img.complete, img.width, img.height);
 	loading_sign.style.display='flex';
 	loading_sign.style.width=img.width+'px';
 	loading_sign.style.height=img.height+'px';
-	console.log(img.complete, img.x, img.y);
 	loading_sign.style.left=img.x+'px';
 	loading_sign.style.top=img.y+'px';
 	loading_sign.firstElementChild.classList.add('animating');
@@ -55,8 +60,33 @@ async function loadFile(event) {
 		loading_sign.firstElementChild.classList.remove('animating');
 		loading_sign.style.width=img.style.width;
 		loading_sign.style.height=img.style.height;
-    console.log("stop loading!");
   }
+}
+
+function unit_conv(unit_src, u_dst) {
+  if (unit_src.length === 0) return 0;
+  const u_src = unit_src.substr(-2);
+  if (u_src === u_dst) return parseFloat(unit_src);
+
+  const div = document.createElement('div');
+  const unit_val = 10;
+  // assume unit is epressed as last 2 chars
+  div.style.width = unit_val + u_src;
+  document.body.appendChild(div);
+  let unit_px;
+  if (u_src !== 'px') {
+    const ss = window.getComputedStyle(div);
+    unit_px = parseFloat(ss.width);
+  } else {
+    unit_px = unit_val;
+  }
+  div.style.width = unit_val + u_dst;
+  let k = window.getComputedStyle(div).width;
+  k = unit_px / parseFloat(k);
+
+  div.remove();
+
+  return parseFloat(unit_src) * k;
 }
 
 function load_pdfjs() {
@@ -92,7 +122,7 @@ async function convert_pdf_jpg(file) {
     const doc = await pdfjsLib.getDocument(cnt).promise;
     const page = await doc.getPage(1);
     const viewport = page.getViewport({ scale: 1 });
-    const scale = 200 / viewport.width;
+    const scale = 1;//200 / viewport.width;
     const sw = page.getViewport({ scale: scale });
     const c = document.getElementById("myCanvas");
     c.width = sw.width;
@@ -135,10 +165,8 @@ function cycle_colors(d, bkg) {
 
 function colors_percentage(src) {
   var cent = cycle_colors(src, 255);
-  var k = 1; // + cent[3]/1.74;// blind empiric number to catch few ghostscript estimations that I have made
   cent = cent.reduce((acc, x) => (acc += x), 0) * 100;
-  cent = round(cent * k, 2);
-  console.log(cent);
+	return cent;
 }
 
 function round(value, decimals) {
