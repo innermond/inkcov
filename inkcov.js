@@ -1,6 +1,6 @@
 let PDFJS_NEEDED = true;
 
-var img = document.getElementById("output");
+const img = document.getElementById("output");
 img.addEventListener("load", function () {
   var c = document.getElementById("myCanvas");
   c.width = img.width;
@@ -13,11 +13,22 @@ img.addEventListener("load", function () {
   console.log(cent);
 });
 
+const loading_sign = document.getElementById("loading");
+
 const file_img = document.getElementById("file");
 file_img.addEventListener("change", loadFile);
 
 async function loadFile(event) {
-  console.log("loading...");
+  console.log("loading...", img.complete, img.width, img.height);
+	loading_sign.style.display='flex';
+	loading_sign.style.width=img.width+'px';
+	loading_sign.style.height=img.height+'px';
+	console.log(img.complete, img.x, img.y);
+	loading_sign.style.left=img.x+'px';
+	loading_sign.style.top=img.y+'px';
+	loading_sign.firstElementChild.classList.add('animating');
+
+	let bincontent;
   try {
     const typ = event.target.files[0].type;
     if (typ === "application/pdf") {
@@ -32,13 +43,18 @@ async function loadFile(event) {
       const res = await convert_pdf_jpg(event.target.files[0]);
       await res.promise;
       var c = document.getElementById("myCanvas");
-      img.src = c.toDataURL();
-      return;
-    }
-    img.src = URL.createObjectURL(event.target.files[0]);
+      bincontent = c.toDataURL();
+		} else {
+			bincontent = URL.createObjectURL(event.target.files[0]);
+		}
   } catch (e) {
     console.log(e);
   } finally {
+		img.src = bincontent;
+		loading_sign.style.display='none';
+		loading_sign.firstElementChild.classList.remove('animating');
+		loading_sign.style.width=img.style.width;
+		loading_sign.style.height=img.style.height;
     console.log("stop loading!");
   }
 }
