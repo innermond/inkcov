@@ -8,9 +8,17 @@
   </head>
 
   <body>
+		<div style="display:flex;flex-wrap:wrap">
+		<div>
     <input type="file" name="image" id="file" style="display: none" />
 		<label for="file" style="cursor: pointer">Încarcă eticheta</label>
-    <img id="output" style="width:200px;transition: all 5s" />
+		<table>
+			<tr><td>dimensiuni</td><td id="image_dimensions">200x200mm</td></tr>
+			<tr><td>acoperire culoare</td><td id="image_coverage">50%</td></tr>
+		</table>
+		</div>
+    <img id="output" style="width:200px;transition: all 5s" src="/rola.png" />
+		</div>
     <canvas
       id="draw_image"
       width="220"

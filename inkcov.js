@@ -1,6 +1,7 @@
 let PDFJS_NEEDED = true;
 let UTIF_NEEDED = true;
-
+const img_wh = document.getElementById("image_dimensions");
+const img_cov = document.getElementById("image_coverage");
 const img = document.getElementById("output");
 img.addEventListener("load", function () {
   var c = document.getElementById("draw_image");
@@ -11,9 +12,12 @@ img.addEventListener("load", function () {
   ctx.drawImage(img, 0, 0);
   var imgData = ctx.getImageData(0, 0, c.width, c.height);
   var cent = colors_percentage(imgData.data);
-	const mmw = unit_conv(img.naturalWidth+'px', 'mm');
-	const mmh = unit_conv(img.naturalHeight+'px', 'mm');
+	let mmw = unit_conv(img.naturalWidth+'px', 'mm');
+	let mmh = unit_conv(img.naturalHeight+'px', 'mm');
+	[mmw, mmh] = [mmw, mmh].map(x=>round(x,2));
 	console.log('mm', mmw, mmh);
+	img_wh.textContent = `${mmw}x${mmh}mm`;
+	img_cov.textContent = `${round(cent, 2)}%`;
 	const n_1mm = 4.5595;
 	const e_1mm = 0.00000364;
 	const nn = Math.ceil(mmw*mmh*n_1mm*cent/100, 0);
