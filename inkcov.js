@@ -2,7 +2,7 @@ let PDFJS_NEEDED = true;
 
 const img = document.getElementById("output");
 img.addEventListener("load", function () {
-  var c = document.getElementById("myCanvas");
+  var c = document.getElementById("draw_image");
   c.width = img.width;
   c.height = img.height;
   var ctx = c.getContext("2d");
@@ -47,7 +47,7 @@ async function loadFile(event) {
       }
       const res = await convert_pdf_jpg(event.target.files[0]);
       await res.promise;
-      var c = document.getElementById("myCanvas");
+      var c = document.getElementById("draw_image");
       bincontent = c.toDataURL();
 		} else {
 			bincontent = URL.createObjectURL(event.target.files[0]);
@@ -121,16 +121,20 @@ async function convert_pdf_jpg(file) {
 
     const doc = await pdfjsLib.getDocument(cnt).promise;
     const page = await doc.getPage(1);
-    const viewport = page.getViewport({ scale: 1 });
-    const scale = 1;//200 / viewport.width;
+		// pdfjs renders at 72dpi
+		// currently browsers renders at 96dpi
+		const dpi = 96*window.devicePixelRatio;
+		// we scale between pdfjs and browser
+    const scale = dpi/72;
     const sw = page.getViewport({ scale: scale });
-    const c = document.getElementById("myCanvas");
+		console.log('w pdf', sw.width);
+    const c = document.getElementById("draw_image");
     c.width = sw.width;
     c.height = sw.height;
     var ctx = c.getContext("2d");
     const renderContext = {
       canvasContext: ctx,
-      viewport: viewport,
+      viewport: sw,
     };
     ctx.scale(scale, scale);
 
