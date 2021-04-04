@@ -1,4 +1,5 @@
 let PDFJS_NEEDED = true;
+let UTIF_NEEDED = true;
 
 const img = document.getElementById("output");
 img.addEventListener("load", function () {
@@ -49,6 +50,16 @@ async function loadFile(event) {
       await res.promise;
       var c = document.getElementById("draw_image");
       bincontent = c.toDataURL();
+		} else if (/^image\/tiff?$/.test(typ)) {
+			if (UTIF_NEEDED) {
+        const res = await load_utif();
+        if (res instanceof Error) {
+          console.log(res);
+          return;
+        }
+        UTIF_NEEDED = false;
+			}
+      bincontent = await convert_tif_jpg(event.target.files[0]);
 		} else {
 			bincontent = URL.createObjectURL(event.target.files[0]);
 		}
@@ -89,21 +100,27 @@ function unit_conv(unit_src, u_dst) {
   return parseFloat(unit_src) * k;
 }
 
+function load_script(...ff) {
+	const pp = [];
+	ff.forEach(f => {
+		const p = new Promise((resolve, reject) => {
+			const s = document.createElement("script");
+			s.onload = resolve;
+			s.onerror = reject;
+			s.src = f;
+			document.body.appendChild(s);
+		});
+		pp.push(p);
+	});
+	return Promise.all(pp);
+}
+
 function load_pdfjs() {
-  return new Promise((resolve, reject) => {
-    const s1 = document.createElement("script");
-    s1.onload = resolve;
-    s1.onerror = reject;
-    s1.src = "/pdf/pdf.js";
+	return load_script('/pdf/pdf.js', '/pdf/pdf.worker.js');
+}
 
-    const s2 = document.createElement("script");
-    s2.onload = resolve;
-    s2.onerror = reject;
-    s2.src = "/pdf/pdf.worker.js";
-
-    document.body.appendChild(s1);
-    document.body.appendChild(s2);
-  });
+function load_utif() {
+	return load_script('/pako.js', '/UTIF.js');
 }
 
 async function convert_pdf_jpg(file) {
@@ -139,6 +156,43 @@ async function convert_pdf_jpg(file) {
     ctx.scale(scale, scale);
 
     return await page.render(renderContext);
+  } catch (e) {
+    console.log(e);
+  }
+}
+
+async function convert_tif_jpg(file) {
+  try {
+    const get_tif_content = new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = function () {
+        resolve(new Uint8Array(r.result));
+      };
+      r.onerror = reject;
+      r.readAsArrayBuffer(file);
+    });
+
+    const buff = await get_tif_content;
+		var ifds = UTIF.decode(buff);
+		var vsns = ifds, ma=0, page=vsns[0];  if(ifds[0].subIFD) vsns = vsns.concat(ifds[0].subIFD);
+		for(var i=0; i<vsns.length; i++) {
+			var img = vsns[i];
+			if(img["t258"]==null || img["t258"].length<3) continue;
+			var ar = img["t256"]*img["t257"];
+			if(ar>ma) {  ma=ar;  page=img;  }
+		}
+		UTIF.decodeImage(buff, page, ifds);
+		var rgba = UTIF.toRGBA8(page), w=page.width, h=page.height;
+		var cnv = document.getElementById("draw_image");  cnv.width=w;  cnv.height=h;
+		var ctx = cnv.getContext("2d");
+		// currently browsers renders at 96dpi
+		const dpi = 96*window.devicePixelRatio;
+		// we scale between pdfjs and browser
+    const scale = dpi/72;
+		ctx.scale(scale, scale);
+		var imgd = new ImageData(new Uint8ClampedArray(rgba.buffer),w,h);
+		ctx.putImageData(imgd,0,0);
+		return cnv.toDataURL();
   } catch (e) {
     console.log(e);
   }
