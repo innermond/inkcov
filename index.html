@@ -13,8 +13,14 @@
     <input type="file" name="image" id="file" style="display: none" />
 		<label for="file" style="cursor: pointer">Încarcă eticheta</label>
 		<table>
-			<tr><td>dimensiuni</td><td id="image_dimensions">200x200mm</td></tr>
+			<tr><td>dimensiuni (mm)</td><td id="image_dimensions">200x200mm</td></tr>
 			<tr><td>acoperire culoare</td><td id="image_coverage">50%</td></tr>
+			<tr><td>preț</td><td id="image_price"></td></tr>
+			<tr><td>&nbsp;</td>
+				<td>
+				<a href="" id="img_dim_minus">-</a> <a href="" id="img_dim_plus">+</a>
+				</td>
+			</tr>
 		</table>
 		</div>
     <img id="output" style="width:200px;transition: all 5s" src="/rola.png" />

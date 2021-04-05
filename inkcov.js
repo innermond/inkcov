@@ -2,6 +2,7 @@ let PDFJS_NEEDED = true;
 let UTIF_NEEDED = true;
 const img_wh = document.getElementById("image_dimensions");
 const img_cov = document.getElementById("image_coverage");
+const img_price = document.getElementById("image_price");
 const img = document.getElementById("output");
 img.addEventListener("load", function () {
   var c = document.getElementById("draw_image");
@@ -16,12 +17,13 @@ img.addEventListener("load", function () {
 	let mmh = unit_conv(img.naturalHeight+'px', 'mm');
 	[mmw, mmh] = [mmw, mmh].map(x=>round(x,2));
 	console.log('mm', mmw, mmh);
-	img_wh.textContent = `${mmw}x${mmh}mm`;
+	img_wh.textContent = `${mmw}x${mmh}`;
 	img_cov.textContent = `${round(cent, 2)}%`;
 	const n_1mm = 4.5595;
 	const e_1mm = 0.00000364;
 	const nn = Math.ceil(mmw*mmh*n_1mm*cent/100, 0);
 	const p = round(mmw*mmh*e_1mm*cent/100, 5);
+	img_price.textContent = p;
 	console.log('coverage %', cent, 'price', p, 'picoliters', nn);
 });
 
@@ -76,6 +78,61 @@ async function loadFile(event) {
 		loading_sign.style.width=img.style.width;
 		loading_sign.style.height=img.style.height;
   }
+}
+
+const minus = document.getElementById('img_dim_minus');
+minus.addEventListener('click', evt => {
+	evt.preventDefault();
+	if (evt.target !== minus) return;
+	recalculate_dimensions_price(-1);
+});
+void function() {
+	let tid;
+	minus.addEventListener('mousedown', evt => {
+		evt.preventDefault();
+		if (evt.target !== minus) return;
+		tid = setInterval(recalculate_dimensions_price, 300, -1);
+	});
+	minus.addEventListener('mouseup', evt => {
+		evt.preventDefault();
+		if (evt.target !== minus) return;
+		clearInterval(tid);
+	});
+}();
+const plus = document.getElementById('img_dim_plus');
+plus.addEventListener('click', evt => {
+	evt.preventDefault();
+	if (evt.target !== plus) return;
+	recalculate_dimensions_price(+1);
+});
+void function() {
+	let tid;
+	plus.addEventListener('mousedown', evt => {
+		evt.preventDefault();
+		if (evt.target !== plus) return;
+		tid = setInterval(recalculate_dimensions_price, 300, +1);
+	});
+	plus.addEventListener('mouseup', evt => {
+		evt.preventDefault();
+		if (evt.target !== plus) return;
+		clearInterval(tid);
+	});
+}();
+
+function recalculate_dimensions_price(sign) {
+	let [w, h] = img_wh.textContent.trim().split('x').map(x=>parseFloat(x));
+	const area = w*h;
+	const ratio = w/h;
+	w = w + sign; h = w / ratio;
+	h = round(h, 2); w = round(w, 2);
+	img_wh.textContent = `${w}x${h}`;
+
+	let p = img_price.textContent.trim();
+	p = parseFloat(p);
+	const new_area = w*h;
+	let new_p = new_area/area*p;
+	new_p = round(new_p, 5);
+	img_price.textContent = new_p;
 }
 
 function unit_conv(unit_src, u_dst) {
